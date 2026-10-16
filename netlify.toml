@@ -1,0 +1,14 @@
+# Bot ou Pas — configuration Netlify (rien à modifier)
+[build]
+  publish = "."
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/clips/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+    Content-Type = "audio/mpeg"

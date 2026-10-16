@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Deux morceaux, un seul est fait par une IA. Saurais-tu le reconnaître à l'oreille ?">
+<meta property="og:title" content="Bot ou Pas : IA ou humain ?">
+<meta property="og:description" content="Deux morceaux, un seul est fait par une IA. Saurais-tu le reconnaître à l'oreille ?">
+<meta property="og:image" content="/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#FFD93B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23170F33'/%3E%3Ccircle cx='32' cy='32' r='12' fill='%23FF2E88'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23FFD93B'/%3E%3C/svg%3E">
+<title>Bot ou Pas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800;900&display=swap">
+<style>
+/* Layout: a boxing-ring poster. Pink corner (A) vs cobalt corner (B), sticker cards with hard ink shadows on a halftone sunflower ground. Single committed bright look. */
+:root{
+  --sun:#FFD93B; --sun-2:#FFC21A; --ink:#170F33; --paper:#FFFDF6;
+  --a:#FF2E88; --a-soft:#FFD1E5; --b:#2447FF; --b-soft:#D3DBFF;
+  --win:#00B472; --lose:#F2482B; --mute:#5B527A;
+  --f-disp:"Bungee","Impact","Arial Black",sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:18px; --sh:5px 5px 0 var(--ink);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--sun);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  background-image:radial-gradient(color-mix(in srgb,var(--sun-2) 100%,transparent) 1.6px,transparent 1.7px);background-size:14px 14px;}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--b);outline-offset:3px}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:14px 60px}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.logo{font-family:var(--f-disp);font-size:clamp(26px,5vw,40px);line-height:.9;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.logo .bot{color:var(--a);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink)}
+.logo .pas{color:var(--b);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:3px 3px 0 var(--ink)}
+.logo .ou{font-size:.5em;background:var(--ink);color:var(--sun);padding:4px 6px;border-radius:6px;transform:rotate(-6deg)}
+.hud{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--paper);border:2.5px solid var(--ink);border-radius:999px;padding:5px 12px;font-weight:800;font-variant-numeric:tabular-nums;display:flex;gap:6px;align-items:center;box-shadow:3px 3px 0 var(--ink);white-space:nowrap}
+.chip small{font-weight:600;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.chip.fire{background:var(--a);color:#fff}
+.chip.fire small{color:#ffe1ee}
+
+nav.tabs{display:flex;gap:8px;margin:16px 0 14px;overflow-x:auto;padding-bottom:6px}
+nav.tabs button{background:transparent;border:2.5px solid var(--ink);border-radius:12px;padding:8px 14px;font-weight:800;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--sun)}
+
+/* mode bar */
+.modebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:inline-flex;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden;background:var(--paper)}
+.seg button{border:0;background:transparent;padding:7px 12px;font-weight:800}
+.seg button[aria-pressed="true"]{background:var(--b);color:#fff}
+.dailybar{display:flex;gap:4px}
+.dailybar i{width:16px;height:16px;border-radius:4px;border:2px solid var(--ink);background:var(--paper);display:block}
+.dailybar i.ok{background:var(--win)} .dailybar i.ko{background:var(--lose)} .dailybar i.now{background:var(--sun-2)}
+
+.prompt{font-family:var(--f-disp);font-size:clamp(18px,3.4vw,26px);text-align:center;margin:6px 0 14px;text-wrap:balance}
+.prompt em{font-style:normal;color:var(--a);-webkit-text-stroke:1px var(--ink)}
+
+/* ring */
+.ring{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch}
+.vs{align-self:center;font-family:var(--f-disp);font-size:30px;background:var(--ink);color:var(--sun);width:62px;height:62px;border-radius:50%;display:grid;place-items:center;transform:rotate(-8deg);box-shadow:3px 3px 0 var(--paper)}
+.card{position:relative;background:var(--paper);border:3px solid var(--ink);border-radius:var(--r);box-shadow:var(--sh);padding:14px;display:flex;flex-direction:column;gap:12px;align-items:center;min-width:0;transition:transform .18s}
+.card.A{background:linear-gradient(180deg,var(--a-soft),var(--paper) 55%)}
+.card.B{background:linear-gradient(180deg,var(--b-soft),var(--paper) 55%)}
+.corner{position:absolute;top:-14px;left:14px;font-family:var(--f-disp);font-size:13px;padding:3px 10px;border:2.5px solid var(--ink);border-radius:8px;color:#fff}
+.A .corner{background:var(--a)} .B .corner{background:var(--b)}
+.corner.heart{top:-20px;padding:0;width:44px;height:40px;display:grid;place-items:center;box-shadow:2px 2px 0 var(--ink);transition:transform .12s}
+.corner.heart svg{width:24px;height:24px;fill:transparent;stroke:#fff;stroke-width:2.4}
+.corner.heart:not(:disabled):hover{transform:scale(1.12) rotate(-6deg)}
+.corner.heart:not(:disabled){animation:beat 1.4s ease-in-out infinite}
+.corner.heart.on svg{fill:#fff}
+.corner.heart.on{transform:scale(1.15)}
+.corner.heart:disabled:not(.on){opacity:.45;cursor:default}
+@keyframes beat{0%,100%{transform:scale(1)}12%{transform:scale(1.14)}24%{transform:scale(1)}}
+.disc{position:relative;width:min(100%,190px);aspect-ratio:1;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;max-width:100%;padding:0;background:var(--ink)}
+.disc .vinyl{position:absolute;inset:0;border-radius:50%;background:repeating-radial-gradient(circle,rgba(255,255,255,.07) 0 2px,transparent 2px 5px)}
+.disc .label{position:absolute;inset:30%;border-radius:50%;border:2px solid var(--ink)}
+.disc svg.prog{position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);transform:rotate(-90deg)}
+.disc svg.prog circle{fill:none;stroke-width:6;stroke-linecap:round}
+.disc .pbtn{position:relative;z-index:2;width:58px;height:58px;border-radius:50%;background:var(--paper);border:3px solid var(--ink);display:grid;place-items:center;box-shadow:2px 2px 0 var(--ink)}
+.disc .pbtn svg{width:22px;height:22px}
+.spin .vinyl,.spin .label{animation:spin 2.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.meta{text-align:center;min-height:44px;min-width:0;width:100%}
+.meta .t{font-weight:900;font-size:16px;overflow-wrap:anywhere}
+.meta .s{color:var(--mute);font-size:13px}
+.secs{font-variant-numeric:tabular-nums;font-weight:800;font-size:12px;color:var(--mute)}
+.pick{width:100%;border:3px solid var(--ink);border-radius:14px;padding:12px 10px;font-family:var(--f-disp);font-size:15px;background:var(--ink);color:var(--sun);box-shadow:3px 3px 0 rgba(23,15,51,.35);transition:transform .1s}
+.pick:hover{transform:translateY(-2px)}
+.pick:active{transform:translateY(1px)}
+.pick:disabled{opacity:.4;cursor:default;transform:none}
+.after{display:flex;flex-direction:column;gap:8px;width:100%}
+.btn{border:2.5px solid var(--ink);border-radius:12px;padding:9px 12px;font-weight:800;background:var(--paper);box-shadow:3px 3px 0 var(--ink);display:inline-flex;gap:6px;align-items:center;justify-content:center}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.buy{background:var(--win);color:#fff}
+.btn.fav{background:var(--paper)}
+.btn.fav[aria-pressed="true"]{background:var(--a);color:#fff}
+.btn.big{font-family:var(--f-disp);font-weight:400;font-size:17px;padding:12px 20px;background:var(--b);color:#fff}
+.btn.ghost{box-shadow:none}
+.btn:disabled{opacity:.45;cursor:default}
+
+.stamp{position:absolute;top:44px;right:-6px;font-family:var(--f-disp);font-size:22px;padding:6px 12px;border:3px solid currentColor;border-radius:10px;transform:rotate(12deg);background:var(--paper);z-index:3;animation:stamp .35s cubic-bezier(.2,1.6,.4,1)}
+.stamp.ai{color:var(--a)} .stamp.hu{color:var(--b)}
+@keyframes stamp{from{transform:rotate(12deg) scale(2.2);opacity:0}}
+.card.right{outline:5px solid var(--win);outline-offset:3px}
+.card.wrong{outline:5px solid var(--lose);outline-offset:3px;animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.solo-card{grid-column:1 / -1;justify-self:center;width:min(100%,400px)}
+.solo-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.bluff{font-size:12.5px;font-weight:700;background:var(--sun);border:2px solid var(--ink);border-radius:8px;padding:4px 8px;text-align:center}
+
+.verdict{margin:18px auto 0;max-width:620px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.verdict h2{font-family:var(--f-disp);font-weight:400;font-size:clamp(24px,5vw,36px);margin:0;line-height:1}
+.verdict h2.ok{color:var(--win);-webkit-text-stroke:1.5px var(--ink);paint-order:stroke fill}
+.verdict h2.ko{color:var(--lose);-webkit-text-stroke:1.5px var(--ink);paint-order:stroke fill}
+.verdict .pts{font-weight:900;font-size:18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.hint{color:var(--mute);font-size:13px;text-align:center}
+kbd{font-family:var(--f-body);font-weight:800;border:2px solid var(--ink);border-bottom-width:3px;border-radius:5px;padding:0 5px;font-size:11px;background:var(--paper)}
+
+/* panels */
+.panel{background:var(--paper);border:3px solid var(--ink);border-radius:var(--r);box-shadow:var(--sh);padding:18px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px;align-items:start}
+h3{font-family:var(--f-disp);font-weight:400;font-size:20px;margin:0 0 4px;line-height:1.1}
+.sub{color:var(--mute);margin:0 0 14px;font-size:13.5px}
+ol.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ol.rank li{display:grid;grid-template-columns:34px 40px 1fr auto;gap:10px;align-items:center;padding:8px;border:2px solid var(--ink);border-radius:12px;background:#fff;min-width:0}
+ol.rank li .n{font-family:var(--f-disp);font-size:18px;text-align:center}
+ol.rank li:nth-child(1) .n{color:var(--a)} ol.rank li:nth-child(2) .n{color:var(--b)} ol.rank li:nth-child(3) .n{color:var(--win)}
+.mini{width:40px;height:40px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;padding:0;background:var(--ink)}
+.mini svg{width:14px;height:14px}
+.rk-t{min-width:0}
+.rk-t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-t span{font-size:12px;color:var(--mute)}
+.tag{font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;border:2px solid var(--ink);white-space:nowrap}
+.tag.ai{background:var(--a);color:#fff} .tag.hu{background:var(--b);color:#fff}
+.score{font-weight:900;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.empty{border:2.5px dashed var(--mute);border-radius:12px;padding:16px;color:var(--mute);text-align:center}
+
+form .f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+label.l{font-weight:800;font-size:13px}
+input[type=text],input[type=number],select{border:2.5px solid var(--ink);border-radius:10px;padding:9px 10px;font:inherit;background:#fff;width:100%;color:var(--ink)}
+input[type=file]{font:inherit;max-width:100%}
+input[type=range]{width:100%;accent-color:var(--a)}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radios label{border:2.5px solid var(--ink);border-radius:10px;padding:8px 12px;font-weight:800;display:flex;gap:6px;align-items:center;background:#fff;cursor:pointer}
+.radios input{accent-color:var(--a)}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin-bottom:8px}
+.check input{margin-top:3px;accent-color:var(--b)}
+.legal{font-size:12.5px;color:var(--mute);background:var(--sun);border:2px solid var(--ink);border-radius:10px;padding:10px;margin:0 0 12px}
+.note{font-size:13px;font-weight:700}
+.note.err{color:var(--lose)} .note.ok{color:var(--win)}
+
+.money{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px}
+.mcard{border:2.5px solid var(--ink);border-radius:14px;padding:14px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.mcard .p{font-family:var(--f-disp);font-size:24px}
+.mcard .k{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+.mcard p{margin:0;font-size:13.5px}
+.mcard.hot{background:var(--ink);color:var(--paper)} .mcard.hot .k{color:var(--sun)}
+.split{display:flex;height:26px;border:2.5px solid var(--ink);border-radius:8px;overflow:hidden;font-size:11px;font-weight:800}
+.split span{display:grid;place-items:center;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+td,th{border-bottom:2px solid var(--ink);padding:7px 6px;text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(23,15,51,.55);display:grid;place-items:center;padding:16px;z-index:50}
+.modal{background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:8px 8px 0 var(--ink);max-width:440px;width:100%;padding:20px;display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto}
+.modal h3{font-size:22px}
+.price{font-family:var(--f-disp);font-size:36px;line-height:1}
+.share{white-space:pre-wrap;background:#fff;border:2px solid var(--ink);border-radius:10px;padding:10px;font-size:14px;user-select:all;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--sun);font-weight:800;padding:10px 16px;border-radius:12px;z-index:60;max-width:calc(100% - 32px);text-align:center}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:40;width:100%;height:100%}
+.namebox{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.namebox input{max-width:220px}
+.lvl{height:10px;border:2px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;width:120px}
+.lvl i{display:block;height:100%;background:var(--a)}
+
+@media (max-width:560px){
+  .ring{grid-template-columns:1fr 1fr;gap:12px}
+  .vs{grid-column:1 / -1;grid-row:1;justify-self:center;width:46px;height:46px;font-size:20px;margin-bottom:-4px}
+  .card{padding:12px 9px}
+  .pick{font-size:12.5px;padding:10px 6px}
+  .btn{padding:8px 8px;font-size:13px}
+  .stamp{font-size:15px;top:36px}
+  .disc .pbtn{width:48px;height:48px}
+}
+@media (prefers-reduced-motion:reduce){
+  .spin .vinyl,.spin .label{animation:none}
+  .stamp,.card.wrong,.corner.heart{animation:none!important}
+}
+</style>
+
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="wrap">
+  <header class="top">
+    <div class="logo" aria-label="Bot ou Pas"><span class="bot">BOT</span><span class="ou">ou</span><span class="pas">PAS</span></div>
+    <div class="hud">
+      <span class="chip fire" title="Série en cours"><small>Série</small><span id="hStreak">0</span></span>
+      <span class="chip" title="Points d'oreille"><small>Points</small><span id="hXp">0</span></span>
+      <span class="chip" title="Ton grade"><span id="hRank">Oreille de plomb</span><span class="lvl"><i id="hLvl" style="width:0"></i></span></span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="play">Battle</button>
+    <button role="tab" aria-selected="false" data-tab="top">TOP</button>
+    <button role="tab" aria-selected="false" data-tab="submit">Proposer un morceau</button>
+    <button role="tab" aria-selected="false" data-tab="biz">Pass &amp; modèle</button>
+    <button role="tab" aria-selected="false" data-tab="studio" id="studioTab" hidden>Studio</button>
+  </nav>
+
+  <!-- PLAY -->
+  <section id="tab-play">
+    <div class="modebar">
+      <div class="seg" role="group" aria-label="Mode de jeu">
+        <button id="mFree" aria-pressed="true">Partie libre</button>
+        <button id="mDaily" aria-pressed="false">Défi du jour</button>
+        <button id="mSolo" aria-pressed="false">Solo : IA ou pas ?</button>
+      </div>
+      <div class="dailybar" id="dailyBar" hidden></div>
+      <div class="namebox" style="margin-left:auto">
+        <label for="pseudo" class="l">Pseudo</label>
+        <input type="text" id="pseudo" maxlength="18" autocomplete="off">
+      </div>
+    </div>
+    <p class="prompt" id="prompt">Un morceau est fait par une <em>IA</em>. L'autre par un humain. Démasque le bot.</p>
+    <div class="ring" id="ring"></div>
+    <div class="verdict" id="verdict" hidden></div>
+    <p class="hint" style="margin-top:16px">Le morceau A démarre tout seul, la battle suivante aussi. Raccourcis : <kbd>A</kbd> / <kbd>B</kbd> écouter · <kbd>1</kbd> / <kbd>2</kbd> choisir (préféré, puis IA) · <kbd>Entrée</kbd> battle suivante. Extraits limités à 20 s.</p>
+  </section>
+
+  <!-- TOP -->
+  <section id="tab-top" hidden>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Top 100 des morceaux</h3>
+        <p class="sub">Classé par les « ♥ préféré » que chaque joueur doit donner avant de chercher l'IA, sans savoir qui est qui.</p>
+        <ol class="rank" id="topTracks" style="max-height:70vh;overflow-y:auto;padding-right:4px"></ol>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+        <div class="panel">
+          <h3>Top détectives</h3>
+          <p class="sub">Les meilleures oreilles, au total de points.</p>
+          <ol class="rank" id="topPlayers"></ol>
+        </div>
+        <div class="panel">
+          <h3>IA les plus bluffantes</h3>
+          <p class="sub">Part des joueurs qui ont cru entendre un humain.</p>
+          <ol class="rank" id="topBluff"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUBMIT -->
+  <section id="tab-submit" hidden>
+    <div class="grid2">
+      <form class="panel" id="subForm" novalidate>
+        <h3>Envoie ton morceau dans l'arène</h3>
+        <p class="sub">IA ou humain, ton titre affrontera les autres. Les joueurs le notent, et peuvent l'acheter en entier.</p>
+        <p class="legal"><b>Droits :</b> seuls 20 secondes sont publiées dans le jeu, jamais le fichier complet. Le découpage se fait dans ton navigateur. Tu dois détenir les droits du morceau (ou ceux de l'outil IA qui l'a généré).</p>
+        <div class="f"><label class="l" for="sFile">Fichier audio (MP3, WAV…)</label><input type="file" id="sFile" accept="audio/*"></div>
+        <div class="f"><label class="l" for="sStart">Début de l'extrait : <span id="sStartLbl">0:00</span> → <span id="sEndLbl">0:20</span></label><input type="range" id="sStart" min="0" max="0" step="1" value="0" disabled>
+          <div class="row" style="justify-content:flex-start"><button type="button" class="btn ghost" id="sPreview" disabled>▶ Écouter l'extrait</button></div></div>
+        <div class="f"><label class="l" for="sTitle">Titre</label><input type="text" id="sTitle" maxlength="60"></div>
+        <div class="f"><label class="l" for="sArtist">Nom d'artiste</label><input type="text" id="sArtist" maxlength="40"></div>
+        <div class="f"><span class="l">Ce morceau est…</span>
+          <div class="radios"><label><input type="radio" name="sKind" value="ai" id="sKindAi"> fait par une IA</label><label><input type="radio" name="sKind" value="human" id="sKindHu"> fait par un humain</label></div></div>
+        <div class="f"><label class="l" for="sPrice">Prix du morceau complet</label>
+          <select id="sPrice"><option value="0.99">0,99 €</option><option value="1.29" selected>1,29 €</option><option value="1.99">1,99 €</option><option value="2.49">2,49 €</option></select></div>
+        <label class="check"><input type="checkbox" id="sRights"> Je détiens les droits de ce morceau et j'autorise la diffusion d'un extrait de 20 s.</label>
+        <label class="check"><input type="checkbox" id="sHonest"> Ma déclaration IA / humain est sincère. Une fausse déclaration retire le morceau du jeu.</label>
+        <div class="row" style="justify-content:flex-start;align-items:center"><button class="btn big" type="submit" id="sGo">Envoyer dans l'arène</button><span class="note" id="sNote"></span></div>
+      </form>
+      <div class="panel">
+        <h3>Mes morceaux</h3>
+        <p class="sub">3 envois gratuits par mois. Le Pass Artiste lève la limite et ajoute le Boost.</p>
+        <div id="mySubs"></div>
+        <h3 style="margin-top:18px">Ma discothèque</h3>
+        <p class="sub">Les morceaux complets que tu as achetés.</p>
+        <div id="myBuys"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIZ -->
+  <section id="tab-biz" hidden>
+    <div class="panel" style="margin-bottom:18px">
+      <h3>Le jeu est gratuit. Voilà qui paie.</h3>
+      <p class="sub">Quatre sources de revenus, toutes branchées sur le geste du joueur : écouter, juger, aimer.</p>
+      <div class="money">
+        <div class="mcard"><span class="k">Achat à l'unité</span><span class="p">1,29 €</span><p>Le joueur a aimé un extrait ? Il achète le morceau complet en un clic, juste après le verdict, au moment où l'envie est la plus forte.</p>
+          <div class="split" aria-label="Répartition : 70 % artiste, 20 % plateforme, 10 % cagnotte des détectives"><span style="flex:70;background:var(--b)">Artiste 70 %</span><span style="flex:20;background:var(--a)">Bot ou Pas 20 %</span><span style="flex:10;background:var(--win)">10 %</span></div>
+          <p style="font-size:12px;color:var(--mute)">Les 10 % alimentent la cagnotte du Défi du jour, reversée aux meilleurs détectives du mois.</p></div>
+        <div class="mcard hot"><span class="k">Pass Oreille d'Or</span><span class="p">3,99 €/mois</span><p>Battles illimitées sans pub, points ×2, statistiques détaillées de tes erreurs, accès anticipé aux battles « Artiste contre son clone IA ».</p></div>
+        <div class="mcard"><span class="k">Pass Artiste · Boost</span><span class="p">4,99 €/mois · 2 €</span><p>Envois illimités et rapport d'écoute (taux de préférence, taux de bluff). Le Boost place ton morceau dans 500 battles de plus.</p></div>
+        <div class="mcard"><span class="k">B2B · Données d'authenticité</span><span class="p">Sur devis</span><p>Chaque vote produit un jugement humain étiqueté « IA ou pas ». Labels, distributeurs et outils de détection achètent ces tendances agrégées et anonymes.</p></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Pourquoi on y revient</h3>
+        <div class="table-wrap"><table>
+          <tr><th>Mécanique</th><th>Effet</th></tr>
+          <tr><td>Série × multiplicateur (jusqu'à ×3)</td><td>Une erreur remet à zéro : on veut toujours « une dernière »</td></tr>
+          <tr><td>Bonus de vitesse</td><td>Répondre vite rapporte plus, l'oreille s'entraîne</td></tr>
+          <tr><td>Défi du jour, 10 battles identiques pour tous</td><td>Une seule tentative, un résultat comparable</td></tr>
+          <tr><td>Grille à partager 🟩🟥</td><td>Le score devient un défi lancé aux amis</td></tr>
+          <tr><td>Grades d'oreille</td><td>Plomb → Curieuse → Fine → Or → Détecteur humain</td></tr>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h3>Passer Oreille d'Or</h3>
+        <p class="sub">Démo : aucun paiement n'est encaissé ici. Le bouton montre où se branche le paiement.</p>
+        <button class="btn big" id="passBtn" type="button">Essayer 7 jours gratuits</button>
+        <p class="note" id="passNote" style="margin-top:10px"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDIO (owner) -->
+  <section id="tab-studio" hidden>
+    <div class="panel">
+      <h3>Studio : vérité des morceaux</h3>
+      <p class="sub">Visible par toi seul. Indique pour chaque morceau du catalogue s'il est fait par une IA ou un humain. C'est la réponse utilisée dans les battles.</p>
+      <div class="table-wrap"><table id="studioTable"></table></div>
+      <p class="note" id="studioNote" style="margin-top:10px"></p>
+    </div>
+  </section>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+const CATALOG = [{"id":"t00","title":"[Remix] Static Teeth","artist":null,"dur":344,"kind":"ai"},{"id":"t01","title":"behind the door","artist":null,"dur":232,"kind":"human"},{"id":"t02","title":"Bloody sweet","artist":null,"dur":260,"kind":"ai"},{"id":"t03","title":"Candle Smoke","artist":null,"dur":286,"kind":"human"},{"id":"t04","title":"Don’t Cry, It Cuts Deeper","artist":null,"dur":248,"kind":"ai"},{"id":"t05","title":"Follow You","artist":null,"dur":192,"kind":"human"},{"id":"t06","title":"Hot summer","artist":null,"dur":171,"kind":"ai"},{"id":"t07","title":"I'll Tell You","artist":null,"dur":218,"kind":"human"},{"id":"t08","title":"Into the Wonder","artist":null,"dur":250,"kind":"ai"},{"id":"t09","title":"Last Day On Earth","artist":"Caio Klin","dur":174,"kind":"human"},{"id":"t10","title":"Ma vie sans écran","artist":null,"dur":162,"kind":"ai"},{"id":"t11","title":"Neon & Saltwater","artist":null,"dur":399,"kind":"human"},{"id":"t12","title":"Not a Human","artist":null,"dur":235,"kind":"ai"},{"id":"t13","title":"One Face in a Thousand","artist":null,"dur":198,"kind":"human"},{"id":"t14","title":"ONE LAST ROSE","artist":null,"dur":255,"kind":"ai"},{"id":"t15","title":"Piece of rainbow","artist":null,"dur":278,"kind":"human"},{"id":"t16","title":"por ti por mi","artist":null,"dur":298,"kind":"ai"},{"id":"t17","title":"Rumbo a Dallas","artist":null,"dur":136,"kind":"human"},{"id":"t18","title":"Se Va Tu Sombra","artist":null,"dur":224,"kind":"ai"},{"id":"t19","title":"Welcome to Nowhere","artist":"Sofia Kroun","dur":155,"kind":"human"},{"id":"t20","title":"Stranger to My Name","artist":null,"dur":160,"kind":"ai"},{"id":"t21","title":"The Last Secret Weapon","artist":null,"dur":262,"kind":"human"},{"id":"t22","title":"The Quits","artist":null,"dur":164,"kind":"ai"},{"id":"t23","title":"Till we Touch Heaven","artist":null,"dur":357,"kind":"human"},{"id":"t24","title":"Triple Arch Over Me","artist":null,"dur":298,"kind":"ai"},{"id":"t25","title":"Vow","artist":null,"dur":219,"kind":"human"},{"id":"t26","title":"Welcome to Earth","artist":null,"dur":148,"kind":"ai"},{"id":"t27","title":"Ya tu sabe","artist":null,"dur":176,"kind":"human"},{"id":"t28","title":"ZERO RULES (제로 룰)","artist":null,"dur":102,"kind":"ai"},{"id":"t29","title":"나는 몰라","artist":null,"dur":115,"kind":"human"}];
+const CLIP = 20;
+const MIN_LISTEN=5;
+const canFav=()=>B&&B.listened.A>=MIN_LISTEN&&B.listened.B>=MIN_LISTEN;
+
+const RANKS=[[0,"Oreille de plomb"],[500,"Oreille curieuse"],[1500,"Oreille fine"],[4000,"Oreille d'or"],[10000,"Détecteur humain"]];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=s=>Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0");
+const eur=n=>Number(n).toFixed(2).replace(".",",")+" €";
+function hash(s){let h=2166136261;for(const c of String(s)){h^=c.codePointAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const PALS=[["#FF2E88","#FFD93B"],["#2447FF","#7CF0FF"],["#00B472","#FFE14D"],["#FF7A1A","#FF2E88"],["#8A3BFF","#FF9BD2"],["#00C2D1","#2447FF"],["#F2482B","#FFD93B"],["#1F1A3D","#FF2E88"]];
+function labelBg(id){const h=hash(id),p=PALS[h%PALS.length];return `conic-gradient(from ${h%360}deg,${p[0]},${p[1]},${p[0]})`}
+const PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z" fill="currentColor"/></svg>';
+const PAUSE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor"/></svg>';
+
+/* ---------- storage ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function blankPlayer(){return{name:"Oreille#"+(1000+Math.floor(Math.random()*9000)),xp:0,best:0,streak:0,games:0,correct:0,favW:{},favA:{},seen:{},fooled:{},buys:[],subs:[],daily:null,pass:false}}
+let P=Object.assign(blankPlayer(),LS.get("bop.player",{}));
+let db=null,me=null,userCap=null,isOwner=false,canWrite=true;
+let ALLPLAYERS={};      // uid -> player doc
+let LABELS={};          // id -> 'ai'|'human' override
+let localSubs=[];       // submissions kept only in this browser when no db
+const subAudio={};      // sid -> blob url
+
+let saveChain=Promise.resolve(),saveTimer=null;
+function save(){
+  LS.set("bop.player",P);
+  if(!db||!me||!canWrite)return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{saveChain=saveChain.then(()=>db.doc("players/"+me).set(Object.assign({},P,{upd:Date.now()}))).catch(e=>{if(e&&e.code==="invalid_argument")canWrite=false})},900);
+}
+
+/* ---------- pool ---------- */
+function allTracks(){
+  const list=CATALOG.map(t=>Object.assign({},t,{kind:LABELS[t.id]||t.kind,src:"clips/"+t.id+".mp3",price:1.29,artist:t.artist||"Artiste du catalogue"}));
+  const seenIds=new Set();
+  const addSub=(s,uid)=>{if(seenIds.has(s.id)||s.hidden)return;seenIds.add(s.id);list.push({id:s.id,title:s.title,artist:s.artist,kind:s.kind,price:s.price,uid,sub:true,src:null})};
+  for(const [uid,p] of Object.entries(ALLPLAYERS))(p.subs||[]).forEach(s=>addSub(s,uid));
+  if(me)(P.subs||[]).forEach(s=>addSub(s,me));
+  localSubs.forEach(s=>addSub(s,"local"));
+  return list;
+}
+const byId=id=>allTracks().find(t=>t.id===id);
+async function srcOf(t){
+  if(t.src)return t.src;
+  if(subAudio[t.id])return subAudio[t.id];
+  if(db&&t.uid&&t.uid!=="local"){
+    const snap=await db.doc("uploads/"+t.uid+"/c/"+t.id).get();
+    if(snap.exists){const d=snap.data();const bin=atob(d.b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);subAudio[t.id]=URL.createObjectURL(new Blob([u],{type:d.mime||"audio/mpeg"}));return subAudio[t.id]}
+  }
+  return null;
+}
+
+/* ---------- aggregates ---------- */
+function agg(){
+  const players=Object.assign({},ALLPLAYERS);if(me)players[me]=P;else players.local=P;
+  const favW={},favA={},seen={},fooled={};
+  for(const p of Object.values(players)){
+    for(const[k,v]of Object.entries(p.favW||{}))favW[k]=(favW[k]||0)+v;
+    for(const[k,v]of Object.entries(p.favA||{}))favA[k]=(favA[k]||0)+v;
+    for(const[k,v]of Object.entries(p.seen||{}))seen[k]=(seen[k]||0)+v;
+    for(const[k,v]of Object.entries(p.fooled||{}))fooled[k]=(fooled[k]||0)+v;
+  }
+  return{players,favW,favA,seen,fooled};
+}
+
+/* ---------- HUD ---------- */
+function rankOf(xp){let r=RANKS[0],n=null;for(let i=0;i<RANKS.length;i++){if(xp>=RANKS[i][0]){r=RANKS[i];n=RANKS[i+1]||null}}return{name:r[1],pct:n?(xp-r[0])/(n[0]-r[0]):1}}
+function hud(){
+  $("#hStreak").textContent=P.streak;$("#hXp").textContent=P.xp.toLocaleString("fr-FR");
+  const r=rankOf(P.xp);$("#hRank").textContent=r.name;$("#hLvl").style.width=Math.round(r.pct*100)+"%";
+  if(document.activeElement!==$("#pseudo"))$("#pseudo").value=P.name;
+}
+$("#pseudo").addEventListener("change",e=>{const v=e.target.value.trim().slice(0,18);if(v){P.name=v;save()}hud()});
+
+/* ---------- audio + sfx ---------- */
+const au=new Audio();au.preload="auto";
+let playing=null; // 'A'|'B'
+let actx=null;
+function sfx(kind){
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;
+    const notes=kind==="ok"?[523,659,784,1047]:[330,247];
+    notes.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type=kind==="ok"?"square":"sawtooth";o.frequency.value=f;g.gain.setValueAtTime(0.0001,t+i*.08);g.gain.exponentialRampToValueAtTime(.08,t+i*.08+.01);g.gain.exponentialRampToValueAtTime(.0001,t+i*.08+.18);o.connect(g).connect(actx.destination);o.start(t+i*.08);o.stop(t+i*.08+.2)});
+  }catch(e){}
+}
+
+/* ---------- battle ---------- */
+let mode="free",B=null,recent=[];
+function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function dailyPairs(){
+  const pool=allTracks().filter(t=>!t.sub);const r=rng(hash("bop"+todayKey()));
+  const ai=pool.filter(t=>t.kind==="ai"),hu=pool.filter(t=>t.kind==="human");
+  const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+  const A=sh(ai),H=sh(hu),out=[];
+  for(let i=0;i<10&&A.length&&H.length;i++)out.push({ai:A[i%A.length].id,hu:H[i%H.length].id,aiLeft:r()<.5});
+  return out;
+}
+let nextT=null,interacted=false;
+["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{interacted=true},{once:false,passive:true}));
+function cancelNext(){clearInterval(nextT);nextT=null}
+function scheduleNext(last){
+  cancelNext();let n=4;const btn=$("#next");
+  const lbl=()=>{if(btn)btn.textContent=(last?"Résultat":mode==="solo"?"Morceau suivant":"Battle suivante")+" dans "+n+"…"};lbl();
+  nextT=setInterval(()=>{if($("#modalRoot").children.length||$("#tab-play").hidden)return;n--;if(n<=0){cancelNext();newBattle()}else lbl()},1000);
+}
+function newBattle(){
+  cancelNext();stopAudio();
+  const pool=allTracks();
+  if(mode==="solo"){
+    const kinds=["ai","human"].filter(k=>pool.some(t=>t.kind===k));
+    const k=kinds[Math.floor(Math.random()*kinds.length)];
+    const c=pool.filter(t=>t.kind===k&&!recent.includes(t.id)),src=c.length?c:pool.filter(t=>t.kind===k);
+    const t=src[Math.floor(Math.random()*src.length)];
+    if(!t){$("#ring").innerHTML='<div class="empty" style="grid-column:1/-1">Le catalogue est vide.</div>';return}
+    recent=[t.id,...recent].slice(0,8);
+    B={solo:true,A:t,t0:performance.now(),done:false,listened:{A:0,B:0},fav:null,guess:null};
+    $("#verdict").hidden=true;$("#verdict").innerHTML="";
+    setPrompt();renderRing();renderDailyBar();
+    if(interacted&&!$("#tab-play").hidden)togglePlay("A");
+    return;
+  }
+  let ai,hu,aiLeft;
+  if(mode==="daily"){
+    const d=P.daily&&P.daily.date===todayKey()?P.daily:null;
+    const idx=d?d.grid.length:0,pairs=dailyPairs();
+    if(idx>=pairs.length){renderDailyDone();return}
+    ({ai,hu,aiLeft}=pairs[idx]);ai=byId(ai);hu=byId(hu);
+  }else{
+    const pick=k=>{const c=pool.filter(t=>t.kind===k&&!recent.includes(t.id));const src=c.length?c:pool.filter(t=>t.kind===k);
+      // new submissions get a small boost
+      const w=src.map(t=>t.sub?3:1),tot=w.reduce((a,b)=>a+b,0);let x=Math.random()*tot;for(let i=0;i<src.length;i++){x-=w[i];if(x<=0)return src[i]}return src[0]};
+    ai=pick("ai");hu=pick("human");aiLeft=Math.random()<.5;
+  }
+  if(!ai||!hu){$("#ring").innerHTML='<div class="empty" style="grid-column:1/-1">Il faut au moins un morceau IA et un morceau humain dans le catalogue.</div>';return}
+  recent=[ai.id,hu.id,...recent].slice(0,8);
+  const L=aiLeft?ai:hu,R=aiLeft?hu:ai;
+  B={A:L,B:R,t0:performance.now(),done:false,listened:{A:0,B:0},fav:null,guess:null};
+  $("#verdict").hidden=true;$("#verdict").innerHTML="";
+  setPrompt();renderRing();renderDailyBar();
+  if(interacted&&!$("#tab-play").hidden)togglePlay("A");
+}
+function setPrompt(){
+  const pre=mode==="daily"?`Défi du jour · battle <b>${(P.daily&&P.daily.date===todayKey()?P.daily.grid.length:0)+1}/10</b> · `:"";
+  if(!B)return;
+  if(B.solo){$("#prompt").innerHTML=B.done?"Verdict !":`Un seul morceau. Écoute-le, puis dis si c'est de l'<em>IA</em> ou un humain.`;return}
+  $("#prompt").innerHTML=B.done?pre+"Verdict !":(!B.fav?pre+`Étape 1 : écoute les deux, puis choisis ton <em>préféré</em>.`:pre+`Étape 2 : l'un des deux est fait par une <em>IA</em>. Lequel ?`);
+}
+function cardHTML(side){
+  const t=B[side],rev=B.done;const C=2*Math.PI*48;
+  const col=side==="A"?"var(--a)":"var(--b)";
+  let meta=rev?`<div class="t">${esc(t.title)}</div><div class="s">${esc(t.artist)}${t.sub?' · nouveau':''}</div>`:`<div class="t">Morceau ${side}</div><div class="s secs" id="secs${side}">0:00 / 0:20</div>`;
+  let stamp=rev?`<div class="stamp ${t.kind==="ai"?"ai":"hu"}">${t.kind==="ai"?"IA":"HUMAIN"}</div>`:"";
+  let actions;
+  const favBadge="";
+  if(!rev&&!B.fav){const need=Math.max(0,Math.ceil(MIN_LISTEN-B.listened[side]));
+    actions=`<button class="pick" style="background:var(--a);color:#fff" data-fav="${side}" ${canFav()?"":"disabled"}>♥ Je préfère ${side}</button><div class="secs">${need?`Écoute encore ${need} s de ce morceau`:"✓ Écouté"}</div>`}
+  else if(!rev)actions=`<div class="after">${favBadge}<button class="pick" data-guess="${side}">C'est de l'IA</button></div>`;
+  else{
+    const a=agg();let bl="";
+    if(t.kind==="ai"){const s=a.seen[t.id]||0,f=a.fooled[t.id]||0;bl=`<div class="bluff">${s?`A trompé ${Math.round(f/s*100)} % des joueurs`:"Première écoute"}</div>`}
+    else{const s=a.seen[t.id]||0,f=a.fooled[t.id]||0;bl=`<div class="bluff">${s?`Pris pour une IA par ${Math.round(f/s*100)} % des joueurs`:"Première écoute"}</div>`}
+    actions=`<div class="after">${bl}${favBadge}</div>`;
+  }
+  const cls=rev?(B.guess===side?(t.kind==="ai"?"right":"wrong"):""):"";
+  return `<article class="card ${side} ${cls}" aria-label="Morceau ${side}"><button class="corner heart${B.fav===side?" on":""}" data-fav="${side}" ${(B.fav||!canFav())?"disabled":""} aria-pressed="${B.fav===side}" aria-label="Coup de cœur pour le morceau ${side}" title="Coup de cœur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4h2c.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg></button>${stamp}
+    <div class="disc ${playing===side?"spin":""}" id="disc${side}"><div class="vinyl"></div><div class="label" style="background:${labelBg(t.id)}"></div>
+      <svg class="prog" viewBox="0 0 104 104"><circle cx="52" cy="52" r="48" stroke="rgba(255,255,255,.15)"/><circle id="ring${side}" cx="52" cy="52" r="48" stroke="${col}" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.min(1,B.listened[side]/CLIP))}"/></svg>
+      <button class="pbtn" data-play="${side}" aria-label="${playing===side?"Pause":"Écouter"} le morceau ${side}">${playing===side?PAUSE:PLAY}</button></div>
+    <div class="meta">${meta}</div>${actions}</article>`;
+}
+function soloHTML(){
+  const t=B.A,rev=B.done,C=2*Math.PI*48,ok=rev&&B.guess===t.kind;
+  const meta=rev?`<div class="t">${esc(t.title)}</div><div class="s">${esc(t.artist)}${t.sub?' · nouveau':''}</div>`:`<div class="t">Morceau mystère</div><div class="s secs" id="secsA">0:00 / 0:20</div>`;
+  const stamp=rev?`<div class="stamp ${t.kind==="ai"?"ai":"hu"}">${t.kind==="ai"?"IA":"HUMAIN"}</div>`:"";
+  let actions;
+  if(!rev){const need=Math.max(0,Math.ceil(MIN_LISTEN-B.listened.A)),dis=need?"disabled":"";
+    actions=`<div class="solo-btns"><button class="pick" style="background:var(--a);color:#fff" data-solo="ai" ${dis}>C'est de l'IA</button><button class="pick" style="background:var(--b);color:#fff" data-solo="human" ${dis}>C'est humain</button></div><div class="secs">${need?`Écoute encore ${need} s avant de répondre`:"✓ Écouté, à toi de juger"}</div>`}
+  else{const a=agg(),se=a.seen[t.id]||0,f=a.fooled[t.id]||0;
+    actions=`<div class="after"><div class="bluff">${se?(t.kind==="ai"?`A trompé ${Math.round(f/se*100)} % des joueurs`:`Pris pour une IA par ${Math.round(f/se*100)} % des joueurs`):"Première écoute"}</div></div>`}
+  return `<article class="card A solo-card ${rev?(ok?"right":"wrong"):""}" aria-label="Morceau mystère"><span class="corner">SOLO</span>${stamp}
+    <div class="disc ${playing==="A"?"spin":""}" id="discA"><div class="vinyl"></div><div class="label" style="background:${labelBg(t.id)}"></div>
+      <svg class="prog" viewBox="0 0 104 104"><circle cx="52" cy="52" r="48" stroke="rgba(255,255,255,.15)"/><circle id="ringA" cx="52" cy="52" r="48" stroke="var(--a)" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.min(1,B.listened.A/CLIP))}"/></svg>
+      <button class="pbtn" data-play="A" aria-label="${playing==="A"?"Pause":"Écouter"} le morceau">${playing==="A"?PAUSE:PLAY}</button></div>
+    <div class="meta">${meta}</div>${actions}</article>`;
+}
+function renderRing(){$("#ring").innerHTML=B&&B.solo?soloHTML():cardHTML("A")+'<div class="vs" aria-hidden="true">VS</div>'+cardHTML("B")}
+function stopAudio(){au.pause();playing=null}
+async function togglePlay(side){
+  if(!B)return;
+  if(playing===side){au.pause();playing=null;renderRing();return}
+  const url=await srcOf(B[side]);if(!url){toast("Extrait indisponible pour l'instant.");return}
+  if(!au.src.endsWith(url)){au.src=url}
+  au.dataset.side=side;
+  if(au.currentTime>=CLIP-0.2||au._side!==side){au.currentTime=0}
+  au._side=side;playing=side;
+  try{await au.play()}catch(e){playing=null}
+  renderRing();
+}
+au.addEventListener("timeupdate",()=>{
+  if(!B||!playing)return;
+  if(au.currentTime>=CLIP){au.pause();au.currentTime=0;playing=null;renderRing();return}
+  const s=playing;const before=B.listened[s];B.listened[s]=Math.max(B.listened[s],au.currentTime);
+  if(!B.fav&&!B.done&&Math.ceil(MIN_LISTEN-before)!==Math.ceil(MIN_LISTEN-B.listened[s])&&before<MIN_LISTEN){renderRing();return}
+  const r=document.getElementById("ring"+s);if(r){const C=2*Math.PI*48;r.setAttribute("stroke-dashoffset",C*(1-Math.min(1,au.currentTime/CLIP)))}
+  const l=document.getElementById("secs"+s);if(l)l.textContent=fmt(au.currentTime)+" / 0:20";
+});
+au.addEventListener("ended",()=>{playing=null;renderRing()});
+
+function guess(side){
+  if(!B||B.done||!B.fav)return;
+  const t=B[side],other=B[side==="A"?"B":"A"],ok=t.kind==="ai";
+  B.done=true;B.guess=side;
+  const secs=(performance.now()-(B.t1||B.t0))/1000;
+  const mult=1+Math.min(P.streak,4)*0.5;
+  const speed=Math.max(0,Math.round(60-secs));
+  const pts=ok?Math.round((100+speed)*mult):0;
+  const ai=ok?t:other,hu=ok?other:t;
+  P.seen[ai.id]=(P.seen[ai.id]||0)+1;P.seen[hu.id]=(P.seen[hu.id]||0)+1;
+  if(!ok){P.fooled[ai.id]=(P.fooled[ai.id]||0)+1;P.fooled[hu.id]=(P.fooled[hu.id]||0)+1}
+  P.games++;if(ok){P.correct++;P.streak++;P.xp+=pts;P.best=Math.max(P.best,P.streak)}else P.streak=0;
+  if(mode==="daily"){if(!P.daily||P.daily.date!==todayKey())P.daily={date:todayKey(),grid:[],score:0};P.daily.grid.push(ok?1:0);P.daily.score+=pts}
+  finish(ok,pts,speed,mult,ok?"Bot démasqué !":"Le bot t'a eu.");
+}
+function answerSolo(kind){
+  if(!B||!B.solo||B.done)return;
+  if(B.listened.A<MIN_LISTEN){toast("Écoute au moins 5 secondes avant de répondre.");return}
+  const t=B.A,ok=kind===t.kind;B.done=true;B.guess=kind;
+  const secs=(performance.now()-B.t0)/1000,mult=1+Math.min(P.streak,4)*0.5,speed=Math.max(0,Math.round(60-secs)),pts=ok?Math.round((100+speed)*mult):0;
+  P.seen[t.id]=(P.seen[t.id]||0)+1;if(!ok)P.fooled[t.id]=(P.fooled[t.id]||0)+1;
+  P.games++;if(ok){P.correct++;P.streak++;P.xp+=pts;P.best=Math.max(P.best,P.streak)}else P.streak=0;
+  finish(ok,pts,speed,mult,t.kind==="ai"?(ok?"Bot démasqué !":"Le bot t'a eu."):(ok?"Bien vu, c'est humain !":"Raté, c'était un humain."));
+}
+function finish(ok,pts,speed,mult,title){
+  save();hud();sfx(ok?"ok":"ko");if(ok)confetti();
+  setPrompt();renderRing();
+  const v=$("#verdict");v.hidden=false;
+  const last=mode==="daily"&&P.daily.grid.length>=10;
+  v.innerHTML=`<h2 class="${ok?"ok":"ko"}">${title}</h2>
+    <div class="pts">${ok?`+${pts} points · vitesse +${speed} · ×${mult.toFixed(1)}`:`Série perdue. Record : ${P.best}`}</div>
+    <div class="row"><button class="btn big" id="next">${last?"Voir mon résultat":(mode==="solo"?"Morceau suivant →":"Battle suivante →")}</button><button class="btn" id="shareBtn">Défier un ami</button></div>`;
+  $("#next").onclick=newBattle;$("#shareBtn").onclick=()=>shareModal();
+  scheduleNext(last);
+  renderDailyBar();
+}
+function setFav(side){
+  if(!B||B.done||B.fav)return;
+  if(!canFav()){toast("Écoute au moins 5 secondes de chaque morceau avant de choisir.");return}
+  const t=B[side],o=B[side==="A"?"B":"A"];
+  if(B.fav){const prev=B[B.fav];P.favW[prev.id]=Math.max(0,(P.favW[prev.id]||0)-1)}
+  else{P.favA[t.id]=(P.favA[t.id]||0)+1;P.favA[o.id]=(P.favA[o.id]||0)+1}
+  P.favW[t.id]=(P.favW[t.id]||0)+1;B.fav=side;B.t1=performance.now();save();setPrompt();renderRing();toast("♥ Compté dans le TOP. Maintenant, trouve l'IA !");
+}
+$("#ring").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.play)togglePlay(b.dataset.play);
+  else if(b.dataset.guess)guess(b.dataset.guess);
+  else if(b.dataset.solo)answerSolo(b.dataset.solo);
+  else if(b.dataset.fav)setFav(b.dataset.fav);
+  else if(b.dataset.buy)buyModal(b.dataset.buy);
+});
+document.addEventListener("keydown",e=>{
+  if(e.target.matches("input,select,textarea")||$("#tab-play").hidden||$("#modalRoot").children.length)return;
+  const k=e.key.toLowerCase();
+  if(k==="a")togglePlay("A");else if(k==="b")togglePlay("B");
+  else if(B&&B.solo&&(k==="1"||k==="2"))answerSolo(k==="1"?"ai":"human");
+  else if(k==="1"||k==="2"){const sd=k==="1"?"A":"B";if(B&&!B.fav)setFav(sd);else guess(sd)}
+  else if(k==="enter"&&B&&B.done){e.preventDefault();newBattle()}
+});
+
+/* ---------- daily ---------- */
+function renderDailyBar(){
+  const bar=$("#dailyBar");bar.hidden=mode!=="daily";if(mode!=="daily")return;
+  const g=P.daily&&P.daily.date===todayKey()?P.daily.grid:[];
+  bar.innerHTML=Array.from({length:10},(_,i)=>`<i class="${i<g.length?(g[i]?"ok":"ko"):(i===g.length?"now":"")}"></i>`).join("");
+}
+function shareLink(){return /^https?:/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)?"\n"+location.origin:""}
+function shareText(){
+  const g=P.daily&&P.daily.date===todayKey()?P.daily.grid:null;
+  const d=new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"});
+  if(g&&g.length)return `🤖 BOT OU PAS · Défi du ${d}\n${g.map(x=>x?"🟩":"🟥").join("")}  ${g.filter(Boolean).length}/${g.length}\nTu distingues une IA d'un humain à l'oreille ? Prouve-le.`+shareLink();
+  return `🤖 BOT OU PAS\nJ'ai démasqué ${P.correct} IA sur ${P.games} battles (série record : ${P.best}).\nTu crois faire la différence entre une IA et un humain ? Viens jouer.`+shareLink();
+}
+function renderDailyDone(){
+  const g=P.daily.grid;stopAudio();
+  $("#prompt").innerHTML=`Défi du jour terminé : <em>${g.filter(Boolean).length}/10</em>`;
+  $("#ring").innerHTML=`<div class="panel" style="grid-column:1/-1;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center">
+    <div style="font-size:30px;letter-spacing:4px">${g.map(x=>x?"🟩":"🟥").join("")}</div>
+    <div class="pts" style="font-weight:900">${P.daily.score} points gagnés aujourd'hui</div>
+    <p class="sub" style="margin:0">Nouveau défi demain. En attendant, la partie libre est illimitée.</p>
+    <div class="row"><button class="btn big" id="shareD">Partager ma grille</button><button class="btn" id="toFree">Partie libre</button></div></div>`;
+  $("#verdict").hidden=true;renderDailyBar();
+  $("#shareD").onclick=()=>shareModal();$("#toFree").onclick=()=>setMode("free");
+}
+function setMode(m){mode=m;$("#mFree").setAttribute("aria-pressed",m==="free");$("#mDaily").setAttribute("aria-pressed",m==="daily");$("#mSolo").setAttribute("aria-pressed",m==="solo");newBattle()}
+$("#mFree").onclick=()=>setMode("free");$("#mDaily").onclick=()=>setMode("daily");$("#mSolo").onclick=()=>setMode("solo");
+
+/* ---------- modals ---------- */
+function modal(html){const r=$("#modalRoot");r.innerHTML=`<div class="scrim"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;
+  const s=r.firstChild;s.addEventListener("click",e=>{if(e.target===s||e.target.closest("[data-close]"))r.innerHTML=""});
+  const f=s.querySelector("button");f&&f.focus();return s}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#modalRoot").innerHTML=""});
+function buyModal(id){
+  const t=byId(id);if(!t)return;const owned=P.buys.includes(id);
+  const m=modal(`<span class="tag ${t.kind==="ai"?"ai":"hu"}" style="align-self:flex-start">${t.kind==="ai"?"Fait par une IA":"Fait par un humain"}</span>
+    <h3>${esc(t.title)}</h3><div class="sub" style="margin:0">${esc(t.artist)}${t.dur?" · morceau complet "+fmt(t.dur):""}</div>
+    <div class="price">${eur(t.price)}</div>
+    <div class="split"><span style="flex:70;background:var(--b)">Artiste ${eur(t.price*.7)}</span><span style="flex:20;background:var(--a)">${eur(t.price*.2)}</span><span style="flex:10;background:var(--win)">${eur(t.price*.1)}</span></div>
+    <p class="legal" style="margin:0">Mode démo : aucun paiement n'est encaissé. Dans la version en ligne, ce bouton ouvre le paiement sécurisé et débloque le MP3 complet en haute qualité.</p>
+    <div class="row" style="justify-content:flex-start"><button class="btn buy" id="doBuy" ${owned?"disabled":""}>${owned?"Déjà dans ta discothèque":"Acheter (démo)"}</button><button class="btn ghost" data-close>Fermer</button></div>`);
+  m.querySelector("#doBuy").onclick=()=>{if(!P.buys.includes(id))P.buys.push(id);save();renderMine();$("#modalRoot").innerHTML="";toast("Ajouté à ta discothèque (démo)")};
+}
+function shareModal(){
+  const txt=shareText();
+  const m=modal(`<h3>Défie tes amis</h3><div class="share" id="shareTxt">${esc(txt)}</div>
+    <div class="row" style="justify-content:flex-start"><button class="btn big" id="copyS">Copier</button><button class="btn ghost" data-close>Fermer</button></div>`);
+  m.querySelector("#copyS").onclick=()=>{
+    const done=()=>toast("Copié. Colle-le où tu veux.");
+    try{navigator.clipboard.writeText(txt).then(done,()=>{selectText(m.querySelector("#shareTxt"));toast("Texte sélectionné : copie-le avec Ctrl+C")})}catch(e){selectText(m.querySelector("#shareTxt"))}
+  };
+}
+function selectText(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r)}
+let toastT;function toast(msg){let t=$(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2200)}
+
+/* ---------- confetti ---------- */
+const fx=$("#fx"),fctx=fx.getContext("2d");let parts=[],fxOn=false;
+function confetti(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  fx.width=innerWidth;fx.height=innerHeight;const cols=["#FF2E88","#2447FF","#00B472","#FFD93B","#170F33"];
+  for(let i=0;i<90;i++)parts.push({x:innerWidth/2,y:innerHeight*.45,vx:(Math.random()-.5)*14,vy:-Math.random()*13-4,r:Math.random()*6+4,c:cols[i%5],a:Math.random()*6,l:90});
+  if(!fxOn){fxOn=true;requestAnimationFrame(tick)}
+}
+function tick(){fctx.clearRect(0,0,fx.width,fx.height);parts=parts.filter(p=>p.l-->0);
+  for(const p of parts){p.vy+=.45;p.x+=p.vx;p.y+=p.vy;p.a+=.2;fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.a);fctx.fillStyle=p.c;fctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);fctx.restore()}
+  if(parts.length)requestAnimationFrame(tick);else{fxOn=false;fctx.clearRect(0,0,fx.width,fx.height)}}
+
+/* ---------- TOP ---------- */
+function miniBtn(t){return `<button class="mini" data-prev="${t.id}" aria-label="Écouter ${esc(t.title)}" style="background:${labelBg(t.id)}">${PLAY}</button>`}
+function renderTop(){
+  const a=agg(),tracks=allTracks();
+  const scored=tracks.map(t=>({t,w:a.favW[t.id]||0,n:a.favA[t.id]||0})).filter(x=>x.n>0).map(x=>Object.assign(x,{s:(x.w+1)/(x.n+2)})).sort((x,y)=>y.s-x.s||y.w-x.w).slice(0,100);
+  $("#topTracks").innerHTML=scored.length?scored.map((x,i)=>`<li><span class="n">${i+1}</span>${miniBtn(x.t)}<div class="rk-t"><b>${esc(x.t.title)}</b><span>${esc(x.t.artist)} · <span class="tag ${x.t.kind==="ai"?"ai":"hu"}">${x.t.kind==="ai"?"IA":"Humain"}</span></span></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="score">${x.w} ♥</span><button class="btn buy" style="padding:4px 8px;font-size:12px" data-buy="${x.t.id}">${eur(x.t.price)}</button></div></li>`).join(""):`<li class="empty" style="display:block">Aucun vote pour l'instant. Joue une battle et choisis ton préféré : il apparaîtra ici.</li>`;
+  const pl=Object.entries(a.players).map(([k,p])=>({k,p})).filter(x=>x.p.games>0).sort((x,y)=>y.p.xp-x.p.xp).slice(0,10);
+  $("#topPlayers").innerHTML=pl.length?pl.map((x,i)=>`<li style="grid-template-columns:34px 1fr auto"><span class="n">${i+1}</span><div class="rk-t"><b>${esc(x.p.name)}${(x.k===me||x.k==="local")?" (toi)":""}</b><span>${rankOf(x.p.xp).name} · ${x.p.games?Math.round(x.p.correct/x.p.games*100):0} % de réussite · record ${x.p.best}</span></div><span class="score">${x.p.xp.toLocaleString("fr-FR")} pts</span></li>`).join(""):`<li class="empty" style="display:block">Personne n'a encore joué. Sois le premier détective.</li>`;
+  const bl=tracks.filter(t=>t.kind==="ai"&&(a.seen[t.id]||0)>0).map(t=>({t,r:(a.fooled[t.id]||0)/a.seen[t.id],s:a.seen[t.id]})).sort((x,y)=>y.r-x.r||y.s-x.s).slice(0,5);
+  $("#topBluff").innerHTML=bl.length?bl.map((x,i)=>`<li><span class="n">${i+1}</span>${miniBtn(x.t)}<div class="rk-t"><b>${esc(x.t.title)}</b><span>${x.s} écoute${x.s>1?"s":""}</span></div><span class="score">${Math.round(x.r*100)} %</span></li>`).join(""):`<li class="empty" style="display:block">Les IA qui piègent le plus de joueurs s'afficheront ici.</li>`;
+}
+const prevAu=new Audio();let prevId=null;
+document.addEventListener("click",async e=>{
+  const p=e.target.closest("[data-prev]");
+  if(p){const id=p.dataset.prev;if(prevId===id){prevAu.pause();prevId=null;p.innerHTML=PLAY;return}
+    stopAudio();renderRing&&B&&renderRing();document.querySelectorAll("[data-prev]").forEach(b=>b.innerHTML=PLAY);
+    const t=byId(id),u=t&&await srcOf(t);if(!u)return;prevAu.src=u;prevAu.currentTime=0;try{await prevAu.play();prevId=id;p.innerHTML=PAUSE}catch(_){}
+    return}
+  const b=e.target.closest("[data-buy]");if(b&&!b.closest("#ring"))buyModal(b.dataset.buy);
+});
+prevAu.addEventListener("timeupdate",()=>{if(prevAu.currentTime>=CLIP)prevAu.pause()});
+prevAu.addEventListener("pause",()=>{document.querySelectorAll("[data-prev]").forEach(b=>b.innerHTML=PLAY);prevId=null});
+
+/* ---------- tabs ---------- */
+function showTab(name){
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===name));
+  ["play","top","submit","biz","studio"].forEach(n=>$("#tab-"+n).hidden=n!==name);
+  if(name!=="play"){stopAudio();B&&renderRing()}
+  if(name!=="top")prevAu.pause();
+  if(name==="top")renderTop();if(name==="submit")renderMine();if(name==="studio")renderStudio();
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+/* ---------- submit ---------- */
+let sBuf=null,sAudio=new Audio();
+function renderMine(){
+  const a=agg();const subs=(P.subs||[]).concat(localSubs.filter(s=>!(P.subs||[]).some(x=>x.id===s.id)));
+  $("#mySubs").innerHTML=subs.length?`<ol class="rank">${subs.map(s=>{const n=a.favA[s.id]||0,w=a.favW[s.id]||0,se=a.seen[s.id]||0,f=a.fooled[s.id]||0;
+    return `<li style="grid-template-columns:40px 1fr auto">${miniBtn({id:s.id,title:s.title})}<div class="rk-t"><b>${esc(s.title)}</b><span><span class="tag ${s.kind==="ai"?"ai":"hu"}">${s.kind==="ai"?"IA":"Humain"}</span> · ${se} battle${se>1?"s":""} · ${se?Math.round(f/se*100):0} % ${s.kind==="ai"?"bluffés":"de doutes"}</span></div><span class="score">${w} ♥</span></li>`}).join("")}</ol>`
+    :`<div class="empty">Pas encore d'envoi. Ton premier morceau entre dans les battles dès sa validation.</div>`;
+  const buys=P.buys.map(byId).filter(Boolean);
+  $("#myBuys").innerHTML=buys.length?`<ol class="rank">${buys.map(t=>`<li style="grid-template-columns:40px 1fr auto">${miniBtn(t)}<div class="rk-t"><b>${esc(t.title)}</b><span>${esc(t.artist)}</span></div><span class="tag ${t.kind==="ai"?"ai":"hu"}">${t.kind==="ai"?"IA":"Humain"}</span></li>`).join("")}</ol>`:`<div class="empty">Rien pour l'instant. Après chaque verdict, un bouton permet d'acheter le morceau complet.</div>`;
+}
+$("#sFile").addEventListener("change",async e=>{
+  const f=e.target.files[0];sBuf=null;$("#sNote").textContent="";$("#sNote").className="note";
+  if(!f)return;
+  if(!$("#sTitle").value)$("#sTitle").value=f.name.replace(/\.[^.]+$/,"").slice(0,60);
+  try{$("#sNote").textContent="Lecture du fichier…";
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    sBuf=await actx.decodeAudioData(await f.arrayBuffer());
+    const max=Math.max(0,Math.floor(sBuf.duration-CLIP));const r=$("#sStart");r.max=max;r.value=Math.min(max,Math.floor(sBuf.duration*.35));r.disabled=false;$("#sPreview").disabled=false;updStart();
+    $("#sNote").textContent=`Durée ${fmt(sBuf.duration)}. Choisis tes 20 secondes.`;
+    sAudio.src=URL.createObjectURL(f);
+  }catch(err){$("#sNote").textContent="Ce fichier ne se lit pas. Essaie un MP3 ou un WAV.";$("#sNote").className="note err"}
+});
+function updStart(){const s=+$("#sStart").value;$("#sStartLbl").textContent=fmt(s);$("#sEndLbl").textContent=fmt(s+CLIP)}
+$("#sStart").addEventListener("input",()=>{updStart();sAudio.pause()});
+$("#sPreview").onclick=()=>{if(!sAudio.paused){sAudio.pause();$("#sPreview").textContent="▶ Écouter l'extrait";return}stopAudio();sAudio.currentTime=+$("#sStart").value;sAudio.play().catch(()=>{});$("#sPreview").textContent="❚❚ Pause"};
+sAudio.addEventListener("timeupdate",()=>{if(sAudio.currentTime>=+$("#sStart").value+CLIP){sAudio.pause()}});
+sAudio.addEventListener("pause",()=>$("#sPreview").textContent="▶ Écouter l'extrait");
+function loadLame(){return new Promise((res,rej)=>{if(window.lamejs)return res(window.lamejs);const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js";s.onload=()=>window.lamejs?res(window.lamejs):rej();s.onerror=rej;document.head.appendChild(s)})}
+async function renderClip(start){
+  const sr=22050,oc=new OfflineAudioContext(1,sr*CLIP,sr);const src=oc.createBufferSource();src.buffer=sBuf;
+  const g=oc.createGain();g.gain.setValueAtTime(0,0);g.gain.linearRampToValueAtTime(1,.5);g.gain.setValueAtTime(1,CLIP-1.2);g.gain.linearRampToValueAtTime(0,CLIP);
+  src.connect(g).connect(oc.destination);src.start(0,start,CLIP);const out=await oc.startRendering();const d=out.getChannelData(0);
+  const pcm=new Int16Array(d.length);for(let i=0;i<d.length;i++)pcm[i]=Math.max(-1,Math.min(1,d[i]))*32767;
+  try{const lame=await loadLame();const enc=new lame.Mp3Encoder(1,sr,48);const parts=[];for(let i=0;i<pcm.length;i+=1152){const b=enc.encodeBuffer(pcm.subarray(i,i+1152));if(b.length)parts.push(new Uint8Array(b))}const e=enc.flush();if(e.length)parts.push(new Uint8Array(e));return new Blob(parts,{type:"audio/mpeg"})}
+  catch(e){ // fallback: 8 kHz 8-bit WAV
+    const step=sr/8000,n=Math.floor(pcm.length/step),buf=new ArrayBuffer(44+n),v=new DataView(buf);const w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+    w(0,"RIFF");v.setUint32(4,36+n,true);w(8,"WAVEfmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,"data");v.setUint32(40,n,true);
+    for(let i=0;i<n;i++)v.setUint8(44+i,(pcm[Math.floor(i*step)]>>8)+128);return new Blob([buf],{type:"audio/wav"})}
+}
+const blobB64=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(String(fr.result).split(",")[1]);fr.readAsDataURL(b)});
+$("#subForm").addEventListener("submit",async e=>{
+  e.preventDefault();const note=$("#sNote");note.className="note err";
+  const kind=document.querySelector('input[name="sKind"]:checked');
+  const title=$("#sTitle").value.trim(),artist=$("#sArtist").value.trim();
+  if(!sBuf)return note.textContent="Ajoute d'abord un fichier audio.";
+  if(!title||!artist)return note.textContent="Indique le titre et ton nom d'artiste.";
+  if(!kind)return note.textContent="Précise si le morceau est fait par une IA ou un humain.";
+  if(!$("#sRights").checked||!$("#sHonest").checked)return note.textContent="Coche les deux engagements pour publier.";
+  const mine=(P.subs||[]).length+localSubs.length;if(mine>=3)return note.textContent="Limite de 3 envois atteinte. Le Pass Artiste la lève.";
+  $("#sGo").disabled=true;note.className="note";note.textContent="Découpage des 20 secondes…";
+  try{
+    const blob=await renderClip(+$("#sStart").value);const id="s"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+    const meta={id,title:title.slice(0,60),artist:artist.slice(0,40),kind:kind.value,price:+$("#sPrice").value,at:Date.now()};
+    subAudio[id]=URL.createObjectURL(blob);
+    let shared=false;
+    if(db&&me&&canWrite){try{const b64=await blobB64(blob);await db.doc("uploads/"+me+"/c/"+id).set({b64,mime:blob.type,title:meta.title});P.subs=(P.subs||[]).concat(meta);save();shared=true}catch(err){}}
+    if(!shared)localSubs.push(meta);
+    note.className="note ok";note.textContent=shared?"Envoyé ! Ton extrait entre dans les battles.":"Ajouté aux battles sur cet appareil (mode hors ligne).";
+    $("#subForm").reset();sBuf=null;$("#sStart").disabled=true;$("#sPreview").disabled=true;renderMine();
+  }catch(err){note.className="note err";note.textContent="Le découpage a échoué. Réessaie avec un autre fichier."}
+  $("#sGo").disabled=false;
+});
+
+/* ---------- pass ---------- */
+$("#passBtn").onclick=()=>{P.pass=true;save();$("#passNote").textContent="Démo : essai activé sur ton profil. Aucun paiement n'a été demandé.";$("#passNote").className="note ok"};
+
+/* ---------- studio ---------- */
+function renderStudio(){
+  $("#studioTable").innerHTML=`<tr><th>Morceau</th><th>Réponse</th><th class="num">Écoutes</th></tr>`+CATALOG.map(t=>{const k=LABELS[t.id]||t.kind;const a=agg();
+    return `<tr><td>${esc(t.title)}</td><td><div class="seg"><button data-lab="${t.id}" data-v="ai" aria-pressed="${k==="ai"}">IA</button><button data-lab="${t.id}" data-v="human" aria-pressed="${k==="human"}">Humain</button></div></td><td class="num">${a.seen[t.id]||0}</td></tr>`}).join("");
+}
+let labChain=Promise.resolve();
+$("#studioTable").addEventListener("click",e=>{const b=e.target.closest("[data-lab]");if(!b)return;LABELS[b.dataset.lab]=b.dataset.v;renderStudio();
+  if(db){labChain=labChain.then(()=>db.doc("catalog/labels").set({labels:LABELS})).then(()=>{$("#studioNote").textContent="Enregistré.";$("#studioNote").className="note ok"},()=>{$("#studioNote").textContent="Échec de l'enregistrement.";$("#studioNote").className="note err"})}});
+
+/* ---------- Netlify backend (used when not running inside Claude) ---------- */
+function netlifyDB(secret,adminKey){
+  const H=()=>{const h={"content-type":"application/json","x-player-secret":secret};if(adminKey)h["x-admin-key"]=adminKey;return h};
+  const snap=(id,r)=>({id,exists:!!r.exists,data:()=>r.data,metadata:{fromCache:false,hasPendingWrites:false}});
+  const poll=(fn,cb,err)=>{let stop=false;const run=async()=>{if(stop)return;try{await fn(cb)}catch(e){err&&err(e)}if(!stop)setTimeout(run,document.hidden?60000:20000)};run();return()=>{stop=true}};
+  const doc=path=>({id:path.split("/").pop(),path,
+    async get(){const r=await fetch("/api/doc?path="+encodeURIComponent(path));if(!r.ok)throw{code:"unavailable"};return snap(this.id,await r.json())},
+    async set(data){const r=await fetch("/api/doc?path="+encodeURIComponent(path),{method:"PUT",headers:H(),body:JSON.stringify(data)});if(!r.ok)throw{code:r.status===403?"invalid_argument":"unavailable"}},
+    onSnapshot(cb,err){return poll(async c=>c(await this.get()),cb,err)}});
+  const collection=path=>{let lim=500;const q={limit(n){lim=n;return q},
+    async get(){const r=await fetch("/api/list?prefix="+encodeURIComponent(path)+"&limit="+lim);if(!r.ok)throw{code:"unavailable"};const rows=await r.json();const docs=rows.map(x=>snap(x.id,{exists:true,data:x.data}));return{docs,size:docs.length,empty:!docs.length}},
+    onSnapshot(cb,err){return poll(async c=>c(await q.get()),cb,err)}};return q};
+  return{doc,collection};
+}
+async function bootNetlify(){
+  try{const ping=await fetch("/api/ping");if(!ping.ok)return}catch(e){return}
+  let secret=LS.get("bop.secret",null);
+  if(!secret){const a=new Uint8Array(24);crypto.getRandomValues(a);secret=[...a].map(b=>b.toString(16).padStart(2,"0")).join("");LS.set("bop.secret",secret)}
+  const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(secret));
+  me=[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,24);
+  if(location.hash==="#admin"){const k=window.prompt("Clé d'administration (ADMIN_KEY) :");if(k)LS.set("bop.admin",k);history.replaceState(null,"",location.pathname)}
+  const adminKey=LS.get("bop.admin",null);isOwner=!!adminKey;
+  if(isOwner)$("#studioTab").hidden=false;
+  db=netlifyDB(secret,adminKey);
+  try{const mine=await db.doc("players/"+me).get();if(mine.exists){const remote=mine.data();if((remote.games||0)>=(P.games||0))P=Object.assign(blankPlayer(),remote)}}catch(e){}
+  hud();save();
+  db.doc("catalog/labels").onSnapshot(s=>{LABELS=s.exists?Object.assign({},s.data().labels||{}):{};if(!$("#tab-studio").hidden)renderStudio()},()=>{});
+  db.collection("players").limit(500).onSnapshot(s=>{const o={};s.docs.forEach(x=>{if(x.id!==me)o[x.id]=x.data()});ALLPLAYERS=o;if(!$("#tab-top").hidden)renderTop()},()=>{});
+}
+
+/* ---------- boot ---------- */
+hud();newBattle();
+(async()=>{
+  if(!window.claude||!claude.use){bootNetlify();return}
+  try{
+    const [d,u]=await Promise.all([claude.use("db"),claude.use("user")]);
+    userCap=u;if(u){isOwner=await u.isOwner();me=await u.id();}
+    if(isOwner)$("#studioTab").hidden=false;
+    if(!d||!me)return;db=d;
+    const mine=await db.doc("players/"+me).get();
+    if(mine.exists){const remote=mine.data();if((remote.games||0)>=(P.games||0))P=Object.assign(blankPlayer(),remote)}
+    hud();save();
+    db.doc("catalog/labels").onSnapshot(s=>{LABELS=s.exists?Object.assign({},s.data().labels||{}):{};if(!$("#tab-studio").hidden)renderStudio()},()=>{});
+    db.collection("players").limit(500).onSnapshot(s=>{const o={};s.docs.forEach(x=>{if(x.id!==me)o[x.id]=x.data()});ALLPLAYERS=o;if(!$("#tab-top").hidden)renderTop()},()=>{});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

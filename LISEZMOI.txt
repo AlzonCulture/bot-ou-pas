@@ -1,0 +1,28 @@
+BOT OU PAS — mise en ligne sur Netlify
+======================================
+
+Contenu du dossier
+- index.html ........ le jeu
+- clips/ ............ les 30 extraits de 20 s (jamais les morceaux complets)
+- og.png ............ l'image affichée quand on partage le lien
+- netlify/functions/api.mjs ... la petite API qui partage scores, votes et TOP
+- netlify.toml, package.json ... la configuration (rien à modifier)
+
+Méthode conseillée (classements partagés) : GitHub + Netlify
+1. Créer un compte GitHub (github.com) puis "New repository" -> nom : bot-ou-pas -> Create.
+2. Sur la page du dépôt : "uploading an existing file" -> glisser TOUT le contenu
+   du dossier dézippé (pas le dossier lui-même) -> Commit changes.
+   Vérifier que "netlify/functions/api.mjs" apparaît bien dans le dépôt.
+3. Sur app.netlify.com : "Add new site" -> "Import an existing project" -> GitHub
+   -> choisir bot-ou-pas. Laisser les réglages proposés -> Deploy.
+4. Site configuration -> Environment variables -> Add a variable :
+   clé ADMIN_KEY, valeur = un mot de passe à toi. Puis Deploys -> Trigger deploy.
+5. Ouvrir https://TON-SITE.netlify.app/#admin , saisir ce mot de passe :
+   l'onglet "Studio" apparaît. Indiquer pour chaque morceau IA ou Humain.
+
+Méthode express (test perso, sans classements partagés)
+- app.netlify.com/drop -> glisser le dossier. Le jeu marche, mais les scores restent
+  sur l'appareil de chaque joueur (le glisser-déposer n'installe pas l'API).
+
+Mettre à jour plus tard
+- Modifier/ajouter les fichiers dans GitHub : Netlify republie tout seul.
